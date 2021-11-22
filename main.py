@@ -26,30 +26,18 @@ class Visitor(ast.NodeVisitor):
                 self.remapped[n.name] = name
 
     def visit_Call(self, node):
-        #print(ast.dump(node))
         self.generic_visit(node)
         if _getattr_with_const(self, node):
             return
         func = node.func
-        try:
-            if isinstance(func, ast.Name):
-                name = func.id
-                if name in self.remapped:
-                    name = self.remapped[name]
-                self.called[name] += node.args
-            elif isinstance(func, ast.Attribute):
-                sts = []
-                while isinstance(func, ast.Attribute):
-                    sts.append(func.attr)
-                    func = func.value
-                assert isinstance(func, ast.Name)
-                sts = reversed(sts)
-                name = ".".join([self.remapped[func.id]] + list(sts))
-                self.called[name] += node.args
-            else:
-                print(ast.dump(node))
-        except Exception:
-            print('oups')
+        if _is_nested_attribute_and_name(func):
+            name, sts = _nested_attribute_and_name(func)
+            if name in self.remapped:
+                name = self.remapped[name]
+            name = ".".join([name] + sts)
+            self.called[name] += node.args
+        else:
+            print(ast.dump(node))
 
     def visit_Name(self, node):
         if node.id == self.library_name:
