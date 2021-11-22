@@ -35,19 +35,17 @@ class Visitor(ast.NodeVisitor):
         func = node.func
         if func in self.nets:
             name = self.nets[func]
-            self.called[name] += []#node.args
-        # all other operators are not supported for now
+            self.called[name] += node.args
+        # all other cases are not supported for now
 
     def visit(self, node):
         if _is_nested_attribute_and_name(node):
             nid, sts = _nested_attribute_and_name(node)
             if nid in self.remapped:
                 nid = self.remapped[nid]
-            if True:#nid.startswith(self.library_name):
-                self.nets[node] = ".".join([nid] + sts)
+            self.nets[node] = ".".join([nid] + sts)
             return
         return super().visit(node)
-
 
     def visit_Assign(self, node):
         self.generic_visit(node)
@@ -58,19 +56,20 @@ class Visitor(ast.NodeVisitor):
             new_name = self.nets[node.value]
             self.remapped[name] = new_name
 
-
     def report(self):
         print("Imports")
-        print([x for x in self.remapped.values() if x.startswith(self.library_name)])
+        print(set([x for x in self.remapped.values() if x.startswith(self.library_name)]))
         print("Calls")
-        print([x for x in self.called.keys() if x.startswith(self.library_name)])
+        print(set([x for x in self.called.keys() if x.startswith(self.library_name)]))
         print("Attrs")
         print(set([x for x in self.nets.values() if x.startswith(self.library_name)]))
+
 
 def _is_nested_attribute_and_name(node):
     while isinstance(node, ast.Attribute):
         node = node.value
     return isinstance(node, ast.Name)
+
 
 def _nested_attribute_and_name(node):
     sts = []
