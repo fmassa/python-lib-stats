@@ -33,6 +33,17 @@ M = mylib.pkg
 
 #test_import_assign()
 
+@pytest.mark.parametrize("code,called", [
+    ("import mylib; mylib.func()", "mylib.func"),
+    ("from mylib.pkg import func; func()", "mylib.pkg.func"),
+    ("import mylib.pkg as T; T.func()", "mylib.pkg.func"),
+    ("import mylib.pkg as T; T.subpkg.func()", "mylib.pkg.subpkg.func")])
+def test_called(code, called):
+    co = ast.parse(code)
+    v = Visitor()
+    v.visit(co)
+    assert called in v.called
+
 
 code = """
 import mylib
@@ -49,13 +60,17 @@ res = T.functional.resize(img, 50)
 m2 = getattr(mylib.pkg, 'resnet101', 'alexnet')(pretrained=True)
 """
 
+code = "getattr(mylib.pkg, 'c')(True, pretrained=False)"
+code = "getattr(getattr(mylib, 'pkg'), 'c')()"
+code = "{'a': mylib.a.d, 'b': mylib.b}"
+
 #with open('/Users/fmassa/github/detr/util/box_ops.py', 'r') as f:
 #with open('/Users/fmassa/github/detr/pkg/backbone.py', 'r') as f:
 #    code = f.read()
 
 co = ast.parse(code)
 
-#print(ast.dump(co))
+print(ast.dump(co))
 
 v = Visitor()
 v.visit(co)
