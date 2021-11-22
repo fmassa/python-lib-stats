@@ -3,11 +3,14 @@ from collections import defaultdict
 
 
 class Visitor(ast.NodeVisitor):
-    def __init__(self, library_name='torchvision'):
+    def __init__(self, library_name=None):
         super().__init__()
+        if library_name is None:
+            library_name = ""
         self.library_name = library_name
         self.remapped = {}
         self.called = defaultdict(list)
+        self.nets = {}
 
     def visit_Import(self, node):
         for n in node.names:
@@ -30,25 +33,39 @@ class Visitor(ast.NodeVisitor):
         if _getattr_with_const(self, node):
             return
         func = node.func
-        if _is_nested_attribute_and_name(func):
-            name, sts = _nested_attribute_and_name(func)
-            if name in self.remapped:
-                name = self.remapped[name]
-            name = ".".join([name] + sts)
-            self.called[name] += node.args
-        else:
-            print(ast.dump(node))
-
-    def visit_Name(self, node):
-        if node.id == self.library_name:
-            print("found")
+        if func in self.nets:
+            name = self.nets[func]
+            self.called[name] += []#node.args
+        # all other operators are not supported for now
 
     def visit(self, node):
         if _is_nested_attribute_and_name(node):
             nid, sts = _nested_attribute_and_name(node)
-            print(nid, sts, node)
+            if nid in self.remapped:
+                nid = self.remapped[nid]
+            if True:#nid.startswith(self.library_name):
+                self.nets[node] = ".".join([nid] + sts)
             return
         return super().visit(node)
+
+
+    def visit_Assign(self, node):
+        self.generic_visit(node)
+        if not isinstance(node.targets[0], ast.Name):
+            return
+        name = node.targets[0].id
+        if node.value in self.nets:
+            new_name = self.nets[node.value]
+            self.remapped[name] = new_name
+
+
+    def report(self):
+        print("Imports")
+        print([x for x in self.remapped.values() if x.startswith(self.library_name)])
+        print("Calls")
+        print([x for x in self.called.keys() if x.startswith(self.library_name)])
+        print("Attrs")
+        print(set([x for x in self.nets.values() if x.startswith(self.library_name)]))
 
 def _is_nested_attribute_and_name(node):
     while isinstance(node, ast.Attribute):
@@ -82,6 +99,10 @@ def _getattr_with_const(self, base_node):
     if name in self.remapped:
         name = self.remapped[name]
     name = ".".join([name] + sts)
-    name = name + "." + node.args[1].value
+    if isinstance(node.args[1], ast.Name):
+        v = "{" + node.args[1].id + "}"
+    else:
+        v = node.args[1].value
+    name = name + "." + v
     self.called[name] += base_node.args
     return True

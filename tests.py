@@ -8,8 +8,9 @@ from main import Visitor
     ("import mylib", "mylib", "mylib"),
     ("import mylib.pkg as P", "P", "mylib.pkg"),
     ("from mylib.pkg import func", "func", "mylib.pkg.func"),
+    ("from mylib.pkg.subpkg import func", "func", "mylib.pkg.subpkg.func"),
     ("from mylib.pkg import func as F", "F", "mylib.pkg.func")],
-    ids=["basic_import", "import_rename", "fromimport", "fromimport_rename"])
+    ids=["basic_import", "import_rename", "fromimport", "fromimport3" ,"fromimport_rename"])
 def test_import_mapping(code, mapped, remapped):
     co = ast.parse(code)
     v = Visitor()
@@ -45,6 +46,15 @@ def test_called(code, called):
     assert called in v.called
 
 
+@pytest.mark.parametrize("code,called", [
+    ("getattr(mylib, 'func')()", "mylib.func"),
+    ("getattr(mylib.pkg, 'func')()", "mylib.pkg.func")])
+def test_getattr_in_call(code, called):
+    co = ast.parse(code)
+    v = Visitor()
+    v.visit(co)
+    assert called in v.called
+
 code = """
 import mylib
 from mylib.pkg import func
@@ -63,16 +73,35 @@ m2 = getattr(mylib.pkg, 'resnet101', 'alexnet')(pretrained=True)
 code = "getattr(mylib.pkg, 'c')(True, pretrained=False)"
 code = "getattr(getattr(mylib, 'pkg'), 'c')()"
 code = "{'a': mylib.a.d, 'b': mylib.b}"
+code = "import mylib; M = mylib.pkg; M()"
 
 #with open('/Users/fmassa/github/detr/util/box_ops.py', 'r') as f:
-#with open('/Users/fmassa/github/detr/pkg/backbone.py', 'r') as f:
+#with open('/Users/fmassa/github/detr/models/backbone.py', 'r') as f:
 #    code = f.read()
 
 co = ast.parse(code)
 
-print(ast.dump(co))
+if False:
+    print(ast.dump(co))
 
-v = Visitor()
-v.visit(co)
-#print(v.remapped)
-print(v.called)
+    v = Visitor()
+    v.visit(co)
+    print(v.remapped)
+    print(v.called)
+    print(list(v.nets.values()))
+    #v.report()
+
+
+if True:
+    import glob
+    files = glob.glob('/Users/fmassa/github/detr/**/*.py', recursive=True)
+
+    v = Visitor("torchvision")
+
+    for fname in files:
+        with open(fname, 'r') as f:
+            code = f.read()
+        co = ast.parse(code)
+        v.visit(co)
+
+    v.report()
