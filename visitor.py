@@ -89,7 +89,7 @@ def _getattr_with_const(self, base_node: ast.AST) -> bool:
         name = self.remapped[name]
     name = ".".join([name] + sts)
     if isinstance(node.args[1], ast.Name):
-        v = "{" + node.args[1].id + "}"
+        v = "{?}"
     else:
         v = node.args[1].value
     name = name + "." + v
