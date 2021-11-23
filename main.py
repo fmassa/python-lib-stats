@@ -28,12 +28,19 @@ def process_local_repository(local_dir: str, library_name: str) -> Dict:
 
     v = Visitor()
 
+    skipped_files = 0
     for fname in files:
         with open(fname, 'r') as f:
             code = f.read()
-        co = ast.parse(code)
+        try:
+            co = ast.parse(code)
+        except SyntaxError:
+            skipped_files += 1
+            # print(f"Skipping {fname} due to SyntaxError")
+            continue
         v.visit(co)
 
+    print(f"Skipped {skipped_files} out of {len(files)} files")
     summary = summarize(v, library_name)
     return summary
 

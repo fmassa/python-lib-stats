@@ -44,7 +44,8 @@ def test_called(code, called):
 @pytest.mark.parametrize("code,called", [
     ("getattr(mylib, 'func')()", "mylib.func"),
     ("getattr(mylib.pkg, 'func')()", "mylib.pkg.func"),
-    ("getattr(mylib, variable)()", "mylib.{?}")])
+    ("getattr(mylib, variable)()", "mylib.{?}"),
+    ("getattr(mylib, a.b.c)()", "mylib.{?}")])
 def test_getattr_in_call(code, called):
     co = ast.parse(code)
     v = Visitor()

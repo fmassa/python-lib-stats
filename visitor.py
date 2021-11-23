@@ -18,6 +18,8 @@ class Visitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.AST):
         module = node.module
+        if module is None:
+            module = "{local_import}"
         for n in node.names:
             name = module + '.' + n.name
             if n.asname:
@@ -32,13 +34,18 @@ class Visitor(ast.NodeVisitor):
             func = node.func.args[0]
             if func in self.attrs:
                 name = self.attrs[func]
-                if isinstance(node.func.args[1], ast.Name):
+                n1 = node.func.args[1]
+                v = None
+                if n1 in self.attrs:
                     v = "{?}"
-                else:
+                elif isinstance(n1, ast.Constant):
                     v = node.func.args[1].value
-                name = name + "." + v
-                self.called[name] += args
-                return
+                if v is None:
+                    print("Unsupported", ast.dump(n1))
+                else:
+                    name = name + "." + v
+                    self.called[name] += args
+                    return
 
         func = node.func
         if func in self.attrs:
