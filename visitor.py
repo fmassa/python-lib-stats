@@ -9,12 +9,17 @@ class Visitor(ast.NodeVisitor):
         self.called = defaultdict(list)
         self.attrs = {}
 
+        self.import_count = defaultdict(int)
+        self.call_count = defaultdict(int)
+        self.access_count = defaultdict(int)
+
     def visit_Import(self, node: ast.AST):
         for n in node.names:
             if n.asname:
                 self.remapped[n.asname] = n.name
             else:
                 self.remapped[n.name] = n.name
+            self.import_count[n.name] += 1
 
     def visit_ImportFrom(self, node: ast.AST):
         module = node.module
@@ -26,6 +31,8 @@ class Visitor(ast.NodeVisitor):
                 self.remapped[n.asname] = name
             else:
                 self.remapped[n.name] = name
+
+            self.import_count[name] += 1
 
     def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
@@ -41,16 +48,19 @@ class Visitor(ast.NodeVisitor):
                 elif isinstance(n1, ast.Constant):
                     v = node.func.args[1].value
                 if v is None:
-                    print("Unsupported", ast.dump(n1))
+                    # print("Unsupported", ast.dump(n1))
+                    pass
                 else:
                     name = name + "." + v
                     self.called[name] += args
+                    self.call_count[name] += 1
                     return
 
         func = node.func
         if func in self.attrs:
             name = self.attrs[func]
             self.called[name] += args
+            self.call_count[name] += 1
         # all other cases are not supported for now
 
     def visit_Assign(self, node: ast.AST):
@@ -69,6 +79,7 @@ class Visitor(ast.NodeVisitor):
             if nid in self.remapped:
                 nid = self.remapped[nid]
             self.attrs[node] = ".".join([nid] + sts)
+            self.access_count[self.attrs[node]] += 1
             return
         return super().visit(node)
 

@@ -6,19 +6,31 @@ from typing import Dict
 from visitor import Visitor
 
 
+def _my_print(data):
+    for k, v in sorted(data.items(), key=lambda x: x[1], reverse=True):
+        print(f"    {k:<65}: {v}")
+
+
 def report(summary):
+    sep = "=" * 75
+    print(sep)
     print("Imports")
-    print(summary["imports"])
+    print(sep)
+    _my_print(summary["imports"])
+    print(sep)
     print("Calls")
-    print(summary["calls"])
+    print(sep)
+    _my_print(summary["calls"])
+    print(sep)
     print("Attrs")
-    print(summary["attributes"])
+    print(sep)
+    _my_print(summary["attributes"])
 
 
 def summarize(v: Visitor, library_name: str):
-    imports = set([x for x in v.remapped.values() if x.startswith(library_name)])
-    calls = set([x for x in v.called.keys() if x.startswith(library_name)])
-    attrs = set([x for x in v.attrs.values() if x.startswith(library_name)])
+    imports = {k: val for k, val in v.import_count.items() if k.startswith(library_name)}
+    calls = {k: val for k, val in v.call_count.items() if k.startswith(library_name)}
+    attrs = {k: val for k, val in v.access_count.items() if k.startswith(library_name)}
     return {"imports": imports, "calls": calls, "attributes": attrs}
 
 
