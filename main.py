@@ -1,4 +1,5 @@
 import ast
+from collections import defaultdict
 import glob
 import os
 from typing import Dict
@@ -23,22 +24,44 @@ def report(summary):
     print(sep)
     print(title.format("Imports"))
     print(sep)
-    _my_print(summary["imports"], l)
+    _my_print(summary["import_count"], l)
     print(sep)
     print(title.format("Calls"))
     print(sep)
-    _my_print(summary["calls"], l)
+    _my_print(summary["call_count"], l)
     print(sep)
     print(title.format("Attrs"))
     print(sep)
-    _my_print(summary["attributes"], l)
+    _my_print(summary["access_count"], l)
 
 
 def summarize(v: Visitor, library_name: str):
-    imports = {k: val for k, val in v.import_count.items() if k.startswith(library_name)}
-    calls = {k: val for k, val in v.call_count.items() if k.startswith(library_name)}
-    attrs = {k: val for k, val in v.access_count.items() if k.startswith(library_name)}
-    return {"imports": imports, "calls": calls, "attributes": attrs}
+    def filter_fn(item):
+        k, v = item
+        return k.startswith(library_name)
+    res = {}
+    for field in ["import_count", "call_count", "access_count"]:
+        generator = filter(filter_fn, getattr(v, field).items())
+        if False:
+            res[field] = {k: val for k, val in generator}
+        else:
+            res[field] = {k: 1 for k, val in generator}
+    return res
+
+def aggregate(summaries):
+    res = {}
+    res["import_count"] = defaultdict(int)
+    res["call_count"] = defaultdict(int)
+    res["access_count"] = defaultdict(int)
+    count_used = 0
+    for summary in summaries:
+        has_appeared = False
+        for field, subsummary in summary.items():
+            for k, v in subsummary.items():
+                res[field][k] += v
+                has_appeared = True
+        count_used += int(has_appeared)
+    return res, count_used
 
 
 def process_local_repository(local_dir: str, library_name: str) -> Dict:
@@ -60,7 +83,7 @@ def process_local_repository(local_dir: str, library_name: str) -> Dict:
         v.visit(co)
 
     if skipped_files > 0:
-        print(f"Skipped {skipped_files} out of {len(files)} files due to SyntaxError")
+        print(f"Skipped {skipped_files} out of {len(files)} files due to SyntaxError in {local_dir}")
     summary = summarize(v, library_name)
     return summary
 
@@ -70,7 +93,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find imports and function calls in Python repos")
     parser.add_argument("--local_dir", type=str, help="repo path")
     parser.add_argument("--library_name", type=str, help="name of the library of interest")
+    # parser.add_argument("--feature", dest="feature", action="store_true")
 
     args = parser.parse_args()
-    summary = process_local_repository(args.local_dir, args.library_name)
+    if False:
+        summary = process_local_repository(args.local_dir, args.library_name)
+    else:
+        directories = [x for x in os.listdir(args.local_dir) if os.path.isdir(os.path.join(args.local_dir, x))]
+        s = []
+        for d in directories:
+            s.append(process_local_repository(os.path.join(args.local_dir, d), args.library_name))
+        summary, count_used = aggregate(s)
+        print(f"Total number of projects that use {args.library_name}: {count_used} / {len(directories)}")
+
     report(summary)
