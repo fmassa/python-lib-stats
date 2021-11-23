@@ -19,13 +19,14 @@ def test_import_mapping(code, mapped, remapped):
     assert v.remapped[mapped] == remapped
 
 
-def test_import_assign():
-    code = """import mylib; M = mylib.pkg"""
+def test_import_assign_call():
+    code = "import mylib; M = mylib.pkg; M()"
     co = ast.parse(code)
     v = Visitor()
     v.visit(co)
     assert "M" in v.remapped
     assert v.remapped["M"] == "mylib.pkg"
+    assert "mylib.pkg" in v.called
 
 
 @pytest.mark.parametrize("code,called", [
@@ -57,40 +58,3 @@ def test_attr_shows():
     v.visit(co)
     assert "mylib.a" in v.nets.values()
     assert "mylib.pkg.b" in v.nets.values()
-
-
-#code = "getattr(mylib.pkg, 'c')(True, pretrained=False)"
-#code = "getattr(getattr(mylib, 'pkg'), 'c')()"
-#code = "{'a': mylib.a.d, 'b': mylib.b}"
-code = "import mylib; M = mylib.pkg; M()"
-
-#with open('/Users/fmassa/github/detr/util/box_ops.py', 'r') as f:
-#with open('/Users/fmassa/github/detr/models/backbone.py', 'r') as f:
-#    code = f.read()
-
-co = ast.parse(code)
-
-if True:
-    #print(ast.dump(co))
-
-    v = Visitor("mylib")
-    v.visit(co)
-    #print(v.remapped)
-    #print(v.called)
-    #print(list(v.nets.values()))
-    v.report()
-
-
-if False:
-    import glob
-    files = glob.glob('/Users/fmassa/github/detr/**/*.py', recursive=True)
-
-    v = Visitor("torchvision")
-
-    for fname in files:
-        with open(fname, 'r') as f:
-            code = f.read()
-        co = ast.parse(code)
-        v.visit(co)
-
-    v.report()

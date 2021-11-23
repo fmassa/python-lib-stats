@@ -3,11 +3,8 @@ from collections import defaultdict
 
 
 class Visitor(ast.NodeVisitor):
-    def __init__(self, library_name=None):
+    def __init__(self):
         super().__init__()
-        if library_name is None:
-            library_name = ""
-        self.library_name = library_name
         self.remapped = {}
         self.called = defaultdict(list)
         self.nets = {}
@@ -56,14 +53,6 @@ class Visitor(ast.NodeVisitor):
         if node.value in self.nets:
             new_name = self.nets[node.value]
             self.remapped[name] = new_name
-
-    def report(self):
-        print("Imports")
-        print(set([x for x in self.remapped.values() if x.startswith(self.library_name)]))
-        print("Calls")
-        print(set([x for x in self.called.keys() if x.startswith(self.library_name)]))
-        print("Attrs")
-        print(set([x for x in self.nets.values() if x.startswith(self.library_name)]))
 
 
 def _is_nested_attribute_and_name(node):
