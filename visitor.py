@@ -35,15 +35,6 @@ class Visitor(ast.NodeVisitor):
             self.called[name] += node.args
         # all other cases are not supported for now
 
-    def visit(self, node: ast.AST):
-        if _is_nested_attribute_and_name(node):
-            nid, sts = _nested_attribute_and_name(node)
-            if nid in self.remapped:
-                nid = self.remapped[nid]
-            self.nets[node] = ".".join([nid] + sts)
-            return
-        return super().visit(node)
-
     def visit_Assign(self, node: ast.AST):
         self.generic_visit(node)
         # easy cases
@@ -53,6 +44,15 @@ class Visitor(ast.NodeVisitor):
         if node.value in self.nets:
             new_name = self.nets[node.value]
             self.remapped[name] = new_name
+
+    def visit(self, node: ast.AST):
+        if _is_nested_attribute_and_name(node):
+            nid, sts = _nested_attribute_and_name(node)
+            if nid in self.remapped:
+                nid = self.remapped[nid]
+            self.nets[node] = ".".join([nid] + sts)
+            return
+        return super().visit(node)
 
 
 def _is_nested_attribute_and_name(node: ast.AST) -> bool:

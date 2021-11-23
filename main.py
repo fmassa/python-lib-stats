@@ -1,6 +1,6 @@
+import ast
 import glob
 import os
-import ast
 from typing import Dict
 
 from visitor import Visitor
