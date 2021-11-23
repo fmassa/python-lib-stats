@@ -9,14 +9,14 @@ class Visitor(ast.NodeVisitor):
         self.called = defaultdict(list)
         self.nets = {}
 
-    def visit_Import(self, node):
+    def visit_Import(self, node: ast.AST):
         for n in node.names:
             if n.asname:
                 self.remapped[n.asname] = n.name
             else:
                 self.remapped[n.name] = n.name
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.AST):
         module = node.module
         for n in node.names:
             name = module + '.' + n.name
@@ -25,7 +25,7 @@ class Visitor(ast.NodeVisitor):
             else:
                 self.remapped[n.name] = name
 
-    def visit_Call(self, node):
+    def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
         if _getattr_with_const(self, node):
             return
@@ -35,7 +35,7 @@ class Visitor(ast.NodeVisitor):
             self.called[name] += node.args
         # all other cases are not supported for now
 
-    def visit(self, node):
+    def visit(self, node: ast.AST):
         if _is_nested_attribute_and_name(node):
             nid, sts = _nested_attribute_and_name(node)
             if nid in self.remapped:
@@ -44,7 +44,7 @@ class Visitor(ast.NodeVisitor):
             return
         return super().visit(node)
 
-    def visit_Assign(self, node):
+    def visit_Assign(self, node: ast.AST):
         self.generic_visit(node)
         # easy cases
         if not isinstance(node.targets[0], ast.Name):
@@ -55,13 +55,13 @@ class Visitor(ast.NodeVisitor):
             self.remapped[name] = new_name
 
 
-def _is_nested_attribute_and_name(node):
+def _is_nested_attribute_and_name(node: ast.AST) -> bool:
     while isinstance(node, ast.Attribute):
         node = node.value
     return isinstance(node, ast.Name)
 
 
-def _nested_attribute_and_name(node):
+def _nested_attribute_and_name(node: ast.AST):
     sts = []
     while isinstance(node, ast.Attribute):
         sts.append(node.attr)
@@ -71,7 +71,7 @@ def _nested_attribute_and_name(node):
     return node.id, sts
 
 
-def _getattr_with_const(self, base_node):
+def _getattr_with_const(self, base_node: ast.AST) -> bool:
     """
     finds the pattern getattr(mylib, 'const')()
     """

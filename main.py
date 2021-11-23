@@ -1,19 +1,28 @@
 import glob
 import os
 import ast
+from typing import Dict
+
 from visitor import Visitor
 
 
-def report(v: Visitor, library_name: str):
+def report(summary):
     print("Imports")
-    print(set([x for x in v.remapped.values() if x.startswith(library_name)]))
+    print(summary["imports"])
     print("Calls")
-    print(set([x for x in v.called.keys() if x.startswith(library_name)]))
+    print(summary["calls"])
     print("Attrs")
-    print(set([x for x in v.nets.values() if x.startswith(library_name)]))
+    print(summary["attributes"])
 
 
-def process_local_repository(local_dir: str, library_name: str):
+def summarize(v: Visitor, library_name: str):
+    imports = set([x for x in v.remapped.values() if x.startswith(library_name)])
+    calls = set([x for x in v.called.keys() if x.startswith(library_name)])
+    attrs = set([x for x in v.nets.values() if x.startswith(library_name)])
+    return {"imports": imports, "calls": calls, "attributes": attrs}
+
+
+def process_local_repository(local_dir: str, library_name: str) -> Dict:
     pattern = os.path.join(local_dir, "**", "*.py")
     files = glob.glob(pattern, recursive=True)
 
@@ -25,7 +34,8 @@ def process_local_repository(local_dir: str, library_name: str):
         co = ast.parse(code)
         v.visit(co)
 
-    report(v, library_name)
+    summary = summarize(v, library_name)
+    return summary
 
 
 if __name__ == "__main__":
@@ -35,4 +45,5 @@ if __name__ == "__main__":
     parser.add_argument("--library_name", type=str, help="name of the library of interest")
 
     args = parser.parse_args()
-    process_local_repository(args.local_dir, args.library_name)
+    summary = process_local_repository(args.local_dir, args.library_name)
+    report(summary)
