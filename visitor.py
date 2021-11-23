@@ -27,8 +27,19 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
-        if _getattr_with_const(self, node):
-            return
+        if _is_getattr_call(node):
+            args = node.args
+            func = node.func.args[0]
+            if func in self.nets:
+                name = self.nets[func]
+                if isinstance(node.func.args[1], ast.Name):
+                    v = "{?}"
+                else:
+                    v = node.func.args[1].value
+                name = name + "." + v
+                self.called[name] += args
+                return
+
         func = node.func
         if func in self.nets:
             name = self.nets[func]
@@ -71,7 +82,7 @@ def _nested_attribute_and_name(node: ast.AST):
     return node.id, sts
 
 
-def _getattr_with_const(self, base_node: ast.AST) -> bool:
+def _is_getattr_call(base_node: ast.AST) -> bool:
     """
     finds the pattern getattr(mylib, 'const')()
     """
@@ -82,16 +93,4 @@ def _getattr_with_const(self, base_node: ast.AST) -> bool:
         return False
     if not (isinstance(node.func, ast.Name) and node.func.id == "getattr"):
         return False
-    if not _is_nested_attribute_and_name(node.args[0]):
-        return False
-    name, sts = _nested_attribute_and_name(node.args[0])
-    if name in self.remapped:
-        name = self.remapped[name]
-    name = ".".join([name] + sts)
-    if isinstance(node.args[1], ast.Name):
-        v = "{?}"
-    else:
-        v = node.args[1].value
-    name = name + "." + v
-    self.called[name] += base_node.args
     return True
