@@ -49,6 +49,7 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         self.generic_visit(node)
+        # easy cases
         if not isinstance(node.targets[0], ast.Name):
             return
         name = node.targets[0].id
@@ -83,7 +84,7 @@ def _nested_attribute_and_name(node):
 
 def _getattr_with_const(self, base_node):
     """
-    finds the pattern getattr(mylib, 'const
+    finds the pattern getattr(mylib, 'const')()
     """
     if not isinstance(base_node, ast.Call):
         return False

@@ -19,20 +19,14 @@ def test_import_mapping(code, mapped, remapped):
     assert v.remapped[mapped] == remapped
 
 
-@pytest.mark.skip()
 def test_import_assign():
-    code = r"""
-import mylib
-
-M = mylib.pkg
-    """
+    code = """import mylib; M = mylib.pkg"""
     co = ast.parse(code)
     v = Visitor()
     v.visit(co)
     assert "M" in v.remapped
     assert v.remapped["M"] == "mylib.pkg"
 
-#test_import_assign()
 
 @pytest.mark.parametrize("code,called", [
     ("import mylib; mylib.func()", "mylib.func"),
@@ -55,24 +49,19 @@ def test_getattr_in_call(code, called):
     v.visit(co)
     assert called in v.called
 
-code = """
-import mylib
-from mylib.pkg import func
-import mylib.pkg as T
 
-M = mylib.pkg
+def test_attr_shows():
+    code = "res = {'a': mylib.a, 'b': mylib.pkg.b}"
+    co = ast.parse(code)
+    v = Visitor()
+    v.visit(co)
+    assert "mylib.a" in v.nets.values()
+    assert "mylib.pkg.b" in v.nets.values()
 
-model = func(pretrained=True)
-transform = T.Resize(50)
 
-res = T.functional.resize(img, 50)
-
-m2 = getattr(mylib.pkg, 'resnet101', 'alexnet')(pretrained=True)
-"""
-
-code = "getattr(mylib.pkg, 'c')(True, pretrained=False)"
-code = "getattr(getattr(mylib, 'pkg'), 'c')()"
-code = "{'a': mylib.a.d, 'b': mylib.b}"
+#code = "getattr(mylib.pkg, 'c')(True, pretrained=False)"
+#code = "getattr(getattr(mylib, 'pkg'), 'c')()"
+#code = "{'a': mylib.a.d, 'b': mylib.b}"
 code = "import mylib; M = mylib.pkg; M()"
 
 #with open('/Users/fmassa/github/detr/util/box_ops.py', 'r') as f:
@@ -81,18 +70,18 @@ code = "import mylib; M = mylib.pkg; M()"
 
 co = ast.parse(code)
 
-if False:
-    print(ast.dump(co))
-
-    v = Visitor()
-    v.visit(co)
-    print(v.remapped)
-    print(v.called)
-    print(list(v.nets.values()))
-    #v.report()
-
-
 if True:
+    #print(ast.dump(co))
+
+    v = Visitor("mylib")
+    v.visit(co)
+    #print(v.remapped)
+    #print(v.called)
+    #print(list(v.nets.values()))
+    v.report()
+
+
+if False:
     import glob
     files = glob.glob('/Users/fmassa/github/detr/**/*.py', recursive=True)
 
