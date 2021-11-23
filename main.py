@@ -40,7 +40,7 @@ def process_local_repository(local_dir: str, library_name: str) -> Dict:
             continue
         v.visit(co)
 
-    print(f"Skipped {skipped_files} out of {len(files)} files")
+    print(f"Skipped {skipped_files} out of {len(files)} files due to SyntaxError")
     summary = summarize(v, library_name)
     return summary
 
