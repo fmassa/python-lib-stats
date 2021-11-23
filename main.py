@@ -6,25 +6,32 @@ from typing import Dict
 from visitor import Visitor
 
 
-def _my_print(data):
+def _my_print(data, l):
+    k = " "
+    v = "| Count"
+    title = "{:>" + str(l) + "s}"
+    print(title.format(v))
+    print("-" * l)
     for k, v in sorted(data.items(), key=lambda x: x[1], reverse=True):
-        print(f"    {k:<65}: {v}")
+        print(f"    {k:<64}: {v}")
 
 
 def report(summary):
-    sep = "=" * 75
+    l = 75
+    sep = "=" * l
+    title = "{:^" + str(l) + "s}"
     print(sep)
-    print("Imports")
+    print(title.format("Imports"))
     print(sep)
-    _my_print(summary["imports"])
+    _my_print(summary["imports"], l)
     print(sep)
-    print("Calls")
+    print(title.format("Calls"))
     print(sep)
-    _my_print(summary["calls"])
+    _my_print(summary["calls"], l)
     print(sep)
-    print("Attrs")
+    print(title.format("Attrs"))
     print(sep)
-    _my_print(summary["attributes"])
+    _my_print(summary["attributes"], l)
 
 
 def summarize(v: Visitor, library_name: str):
@@ -52,7 +59,8 @@ def process_local_repository(local_dir: str, library_name: str) -> Dict:
             continue
         v.visit(co)
 
-    print(f"Skipped {skipped_files} out of {len(files)} files due to SyntaxError")
+    if skipped_files > 0:
+        print(f"Skipped {skipped_files} out of {len(files)} files due to SyntaxError")
     summary = summarize(v, library_name)
     return summary
 
