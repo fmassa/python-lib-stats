@@ -57,5 +57,5 @@ def test_attr_shows():
     co = ast.parse(code)
     v = Visitor()
     v.visit(co)
-    assert "mylib.a" in v.nets.values()
-    assert "mylib.pkg.b" in v.nets.values()
+    assert "mylib.a" in v.attrs.values()
+    assert "mylib.pkg.b" in v.attrs.values()

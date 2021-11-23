@@ -7,7 +7,7 @@ class Visitor(ast.NodeVisitor):
         super().__init__()
         self.remapped = {}
         self.called = defaultdict(list)
-        self.nets = {}
+        self.attrs = {}
 
     def visit_Import(self, node: ast.AST):
         for n in node.names:
@@ -27,11 +27,11 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
+        args = node.args
         if _is_getattr_call(node):
-            args = node.args
             func = node.func.args[0]
-            if func in self.nets:
-                name = self.nets[func]
+            if func in self.attrs:
+                name = self.attrs[func]
                 if isinstance(node.func.args[1], ast.Name):
                     v = "{?}"
                 else:
@@ -41,9 +41,9 @@ class Visitor(ast.NodeVisitor):
                 return
 
         func = node.func
-        if func in self.nets:
-            name = self.nets[func]
-            self.called[name] += node.args
+        if func in self.attrs:
+            name = self.attrs[func]
+            self.called[name] += args
         # all other cases are not supported for now
 
     def visit_Assign(self, node: ast.AST):
@@ -52,8 +52,8 @@ class Visitor(ast.NodeVisitor):
         if not isinstance(node.targets[0], ast.Name):
             return
         name = node.targets[0].id
-        if node.value in self.nets:
-            new_name = self.nets[node.value]
+        if node.value in self.attrs:
+            new_name = self.attrs[node.value]
             self.remapped[name] = new_name
 
     def visit(self, node: ast.AST):
@@ -61,7 +61,7 @@ class Visitor(ast.NodeVisitor):
             nid, sts = _nested_attribute_and_name(node)
             if nid in self.remapped:
                 nid = self.remapped[nid]
-            self.nets[node] = ".".join([nid] + sts)
+            self.attrs[node] = ".".join([nid] + sts)
             return
         return super().visit(node)
 

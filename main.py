@@ -18,7 +18,7 @@ def report(summary):
 def summarize(v: Visitor, library_name: str):
     imports = set([x for x in v.remapped.values() if x.startswith(library_name)])
     calls = set([x for x in v.called.keys() if x.startswith(library_name)])
-    attrs = set([x for x in v.nets.values() if x.startswith(library_name)])
+    attrs = set([x for x in v.attrs.values() if x.startswith(library_name)])
     return {"imports": imports, "calls": calls, "attributes": attrs}
 
 
