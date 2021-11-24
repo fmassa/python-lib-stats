@@ -1,15 +1,30 @@
 # Python Library stats
 
-This is a small library that allows you to query some useful statistics for Python code-bases.
+`pylibstats` is a small library that allows you to query some useful statistics for Python code-bases.
 We currently report library imports, function calls and attributes.
 
-## Usage
 
+## Installation
+
+You can install `pylibstats` with the following command
+
+```
+python -m pip install 'git+https://github.com/fmassa/python-lib-stats.git'
+# (add --user if you don't have permission)
+
+
+# Or, to install it from a local clone:
+git clone https://github.com/fmassa/python-lib-stats.git
+python -m pip install -e python-lib-stats
+```
+
+
+## Usage
 
 In order to find all uses (imports / function calls / attribute queries) from library `<mylib>` over codebase `<path/to/python/repo>`, run the following command:
 
 ```
-python main.py --local_dir <path/to/python/repo> --library_name <mylib>
+pylibstats --local_dir <path/to/python/repo> --library_name <mylib> --absolute_count
 ```
 
 ## Example
