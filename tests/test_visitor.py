@@ -1,7 +1,7 @@
 import ast
 import pytest
 
-from visitor import Visitor
+from pylibstats import Visitor
 
 
 @pytest.mark.parametrize("code,mapped,remapped", [
