@@ -27,6 +27,14 @@ In order to find all uses (imports / function calls / attribute queries) from li
 pylibstats --local_dir <path/to/python/repo> --library_name <mylib> --absolute_count
 ```
 
+You can also use `pylibstats` as a library.
+```python
+import pylibstats
+
+summary = pylibstats.process_local_repository("path/to/repo", library_name="mylib")
+```
+where `summary` is a `Dict[Dict[str, int]]` with the following entries: `import_count`, `call_count` and `access_count`, each field being a dictionary with the mapping of `name: count`.
+
 ## Example
 
 Looking for all `torchvision` occurrences on the [DETR](https://github.com/facebookresearch/detr) codebase yields:
