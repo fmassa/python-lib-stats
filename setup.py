@@ -10,4 +10,5 @@ setup(
     license="BSD",
     python_requires=">=3.6",
     packages=find_packages(exclude=("tests",)),
+    entry_points={'console_scripts': ['pylibstats = pylibstats:main']},
 )

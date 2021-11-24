@@ -2,9 +2,9 @@ import ast
 from collections import defaultdict
 import glob
 import os
-from typing import Dict
+from typing import Dict, Optional, Sequence
 
-from visitor import Visitor
+from .visitor import Visitor
 
 
 def _my_print(data, l):
@@ -86,7 +86,7 @@ def process_local_repository(local_dir: str, library_name: str) -> Dict:
     return summary
 
 
-if __name__ == "__main__":
+def main(argv: Optional[Sequence[str]] = None):
     import argparse
     parser = argparse.ArgumentParser(description="Find imports and function calls in Python repos")
     parser.add_argument("--local_dir", type=str, help="repo path")
@@ -96,7 +96,7 @@ if __name__ == "__main__":
              "or only the presence or not in each immediate folder from local_dir")
     parser.set_defaults(absolute_count=False)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.absolute_count:
         summary = process_local_repository(args.local_dir, args.library_name)
     else:
@@ -108,3 +108,7 @@ if __name__ == "__main__":
         print(f"Total number of projects that use {args.library_name}: {count_used} / {len(directories)}")
 
     report(summary)
+
+
+if __name__ == "__main__":
+    main()
