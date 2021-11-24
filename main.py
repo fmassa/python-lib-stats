@@ -42,11 +42,9 @@ def summarize(v: Visitor, library_name: str):
     res = {}
     for field in ["import_count", "call_count", "access_count"]:
         generator = filter(filter_fn, getattr(v, field).items())
-        if False:
-            res[field] = {k: val for k, val in generator}
-        else:
-            res[field] = {k: 1 for k, val in generator}
+        res[field] = {k: val for k, val in generator}
     return res
+
 
 def aggregate(summaries):
     res = {}
@@ -58,7 +56,7 @@ def aggregate(summaries):
         has_appeared = False
         for field, subsummary in summary.items():
             for k, v in subsummary.items():
-                res[field][k] += v
+                res[field][k] += 1# v
                 has_appeared = True
         count_used += int(has_appeared)
     return res, count_used
@@ -93,10 +91,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find imports and function calls in Python repos")
     parser.add_argument("--local_dir", type=str, help="repo path")
     parser.add_argument("--library_name", type=str, help="name of the library of interest")
-    # parser.add_argument("--feature", dest="feature", action="store_true")
+    parser.add_argument("--absolute_count", dest="absolute_count", action="store_true",
+        help="Whether to consider the absolute counts of the elements retrieved, "
+             "or only the presence or not in each immediate folder from local_dir")
+    parser.set_defaults(absolute_count=False)
 
     args = parser.parse_args()
-    if False:
+    if args.absolute_count:
         summary = process_local_repository(args.local_dir, args.library_name)
     else:
         directories = [x for x in os.listdir(args.local_dir) if os.path.isdir(os.path.join(args.local_dir, x))]
