@@ -46,7 +46,7 @@ def summarize(v: Visitor, library_name: str):
     return res
 
 
-def aggregate(summaries):
+def aggregate(summaries, absolute_count):
     res = {}
     res["import_count"] = defaultdict(int)
     res["call_count"] = defaultdict(int)
@@ -56,7 +56,7 @@ def aggregate(summaries):
         has_appeared = False
         for field, subsummary in summary.items():
             for k, v in subsummary.items():
-                res[field][k] += 1# v
+                res[field][k] += v if absolute_count else 1
                 has_appeared = True
         count_used += int(has_appeared)
     return res, count_used
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         s = []
         for d in directories:
             s.append(process_local_repository(os.path.join(args.local_dir, d), args.library_name))
-        summary, count_used = aggregate(s)
+        summary, count_used = aggregate(s, args.absolute_count)
         print(f"Total number of projects that use {args.library_name}: {count_used} / {len(directories)}")
 
     report(summary)
