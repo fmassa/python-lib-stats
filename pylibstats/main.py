@@ -42,7 +42,15 @@ def report(summary, max_elms=None):
 def summarize(v: Visitor, library_name: str):
     def filter_fn(item):
         k, v = item
-        return k.startswith(library_name)
+        # the item needs to start with library_name
+        if not k.startswith(library_name):
+            return False
+        # and if yes, next character should be a dot (.)
+        # this avoids accepting "lib_other" when "lib" is
+        # requested, but allows "lib.pkg"
+        if len(k) > len(library_name):
+            return k[len(library_name)] == "."
+        return True
     res = {}
     for field in ["import_count", "call_count", "access_count"]:
         generator = filter(filter_fn, getattr(v, field).items())
