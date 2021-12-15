@@ -7,32 +7,36 @@ from typing import Dict, Optional, Sequence
 from .visitor import Visitor
 
 
-def _my_print(data, l):
+def _my_print(data, l, max_elms=None):
     k = " "
     v = "| Count"
     title = "{:>" + str(l) + "s}"
     print(title.format(v))
     print("-" * l)
+    count = 0
     for k, v in sorted(data.items(), key=lambda x: x[1], reverse=True):
         print(f"    {k:<64}: {v}")
+        count +=1
+        if max_elms and count >= max_elms:
+            break
 
 
-def report(summary):
+def report(summary, max_elms=None):
     l = 75
     sep = "=" * l
     title = "{:^" + str(l) + "s}"
     print(sep)
     print(title.format("Imports"))
     print(sep)
-    _my_print(summary["import_count"], l)
+    _my_print(summary["import_count"], l, max_elms)
     print(sep)
     print(title.format("Calls"))
     print(sep)
-    _my_print(summary["call_count"], l)
+    _my_print(summary["call_count"], l, max_elms)
     print(sep)
     print(title.format("Attrs"))
     print(sep)
-    _my_print(summary["access_count"], l)
+    _my_print(summary["access_count"], l, max_elms)
 
 
 def summarize(v: Visitor, library_name: str):
