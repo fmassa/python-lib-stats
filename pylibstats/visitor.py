@@ -11,12 +11,15 @@ class Visitor(ast.NodeVisitor):
     Args:
         hook (callable, optional): Optional hook that will be called on every hit i.e.
             everytime an import, call or attribute access is encountered. Use this to record
-            any additional information you might need. The expected signature is
-            ``callable(node, name, kind)`` where:
+            any additional information you might need. When called, the hook is passed the following
+            kwargs:
 
-            - node is the ast.AST node being visited
-            - name is the name of the API being called/imported/accessed
-            - kind is one of "import", "call" or "access"
+            - "node" is the ast.AST node being visited
+            - "api_name" is the name of the API being called/imported/accessed
+            - "kind" is one of "import", "call" or "access"
+
+            The `.hook()` attribute can be set to a new hook at any time,
+            typically just before a call to ``.visit()``.
     """
     def __init__(self, hook=None):
         super().__init__()
@@ -39,7 +42,7 @@ class Visitor(ast.NodeVisitor):
             else:
                 self.remapped[n.name] = n.name
             self.import_count[n.name] += 1
-            self.hook(node=node, name=n.name, kind="import")
+            self.hook(node=node, api_name=n.name, kind="import")
 
     def visit_ImportFrom(self, node: ast.AST):
         module = node.module
@@ -53,7 +56,7 @@ class Visitor(ast.NodeVisitor):
                 self.remapped[n.name] = name
 
             self.import_count[name] += 1
-            self.hook(node=node, name=name, kind="import")
+            self.hook(node=node, api_name=name, kind="import")
 
     def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
@@ -83,7 +86,7 @@ class Visitor(ast.NodeVisitor):
             name = self.attrs[func]
             self.called[name] += args
             self.call_count[name] += 1
-            self.hook(node=node, name=name, kind="call")
+            self.hook(node=node, api_name=name, kind="call")
         # all other cases are not supported for now
 
     def visit_Assign(self, node: ast.AST):
@@ -104,7 +107,7 @@ class Visitor(ast.NodeVisitor):
             name = ".".join([nid] + sts)
             self.attrs[node] = name
             self.access_count[name] += 1
-            self.hook(node=node, name=name, kind="access")
+            self.hook(node=node, api_name=name, kind="access")
             return
         return super().visit(node)
 

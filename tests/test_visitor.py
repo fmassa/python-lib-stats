@@ -69,8 +69,8 @@ torch.rand(3)
 print(123)
 """
     log = []
-    def hook(node, name, kind):
-        log.append((name, kind))
+    def hook(node, api_name, kind):
+        log.append((api_name, kind))
 
     Visitor(hook=hook).visit(ast.parse(code))
 
