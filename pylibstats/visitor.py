@@ -20,6 +20,8 @@ class Visitor(ast.NodeVisitor):
 
             The `.hook()` attribute can be set to a new hook at any time,
             typically just before a call to ``.visit()``.
+
+            To ensure BC of your hooks, make sure to define **kwargs in the signature.
     """
     def __init__(self, hook=None):
         super().__init__()
