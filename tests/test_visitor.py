@@ -60,3 +60,24 @@ def test_attr_shows():
     v.visit(co)
     assert "mylib.a" in v.attrs.values()
     assert "mylib.pkg.b" in v.attrs.values()
+
+
+def test_hook():
+    code = """
+import torch
+torch.rand(3)
+print(123)
+"""
+    log = []
+    def hook(node, name, kind):
+        log.append((name, kind))
+
+    Visitor(hook=hook).visit(ast.parse(code))
+
+    assert log == [
+        ('torch', 'import'),
+        ('torch.rand', 'access'),
+        ('torch.rand', 'call'),
+        ('print', 'access'),
+        ('print', 'call')
+    ]
