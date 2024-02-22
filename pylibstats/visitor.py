@@ -3,7 +3,27 @@ from collections import defaultdict
 
 
 class Visitor(ast.NodeVisitor):
-    def __init__(self):
+    """AST Visitor that records imports, calls and attribute accesses.
+
+    Stores ``import_count``, ``call_count`` and ``access_count`` attribute
+    The main entry point is the ``visit(node: ast.AST)`` method.
+
+    Args:
+        hook (callable, optional): Optional hook that will be called on every hit i.e.
+            everytime an import, call or attribute access is encountered. Use this to record
+            any additional information you might need. When called, the hook is passed the following
+            kwargs:
+
+            - "node" is the ast.AST node being visited
+            - "api_name" is the name of the API being called/imported/accessed
+            - "kind" is one of "import", "call" or "access"
+
+            The `.hook()` attribute can be set to a new hook at any time,
+            typically just before a call to ``.visit()``.
+
+            To ensure BC of your hooks, make sure to define **kwargs in the signature.
+    """
+    def __init__(self, hook=None):
         super().__init__()
         self.remapped = {}
         self.called = defaultdict(list)
@@ -13,6 +33,10 @@ class Visitor(ast.NodeVisitor):
         self.call_count = defaultdict(int)
         self.access_count = defaultdict(int)
 
+        def _noop(*args, **kwargs):
+            pass
+        self.hook = hook or _noop
+
     def visit_Import(self, node: ast.AST):
         for n in node.names:
             if n.asname:
@@ -20,6 +44,7 @@ class Visitor(ast.NodeVisitor):
             else:
                 self.remapped[n.name] = n.name
             self.import_count[n.name] += 1
+            self.hook(node=node, api_name=n.name, kind="import")
 
     def visit_ImportFrom(self, node: ast.AST):
         module = node.module
@@ -33,6 +58,7 @@ class Visitor(ast.NodeVisitor):
                 self.remapped[n.name] = name
 
             self.import_count[name] += 1
+            self.hook(node=node, api_name=name, kind="import")
 
     def visit_Call(self, node: ast.AST):
         self.generic_visit(node)
@@ -54,6 +80,7 @@ class Visitor(ast.NodeVisitor):
                     name = name + "." + v
                     self.called[name] += args
                     self.call_count[name] += 1
+                    self.hook(node=node, name=name, kind="call")
                     return
 
         func = node.func
@@ -61,6 +88,7 @@ class Visitor(ast.NodeVisitor):
             name = self.attrs[func]
             self.called[name] += args
             self.call_count[name] += 1
+            self.hook(node=node, api_name=name, kind="call")
         # all other cases are not supported for now
 
     def visit_Assign(self, node: ast.AST):
@@ -78,8 +106,10 @@ class Visitor(ast.NodeVisitor):
             nid, sts = _nested_attribute_and_name(node)
             if nid in self.remapped:
                 nid = self.remapped[nid]
-            self.attrs[node] = ".".join([nid] + sts)
-            self.access_count[self.attrs[node]] += 1
+            name = ".".join([nid] + sts)
+            self.attrs[node] = name
+            self.access_count[name] += 1
+            self.hook(node=node, api_name=name, kind="access")
             return
         return super().visit(node)
 
